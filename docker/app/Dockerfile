@@ -1,13 +1,17 @@
 FROM php:8.4-fpm-alpine as base
 
 WORKDIR /app
+ARG PHP_PREFIX=php
 
 COPY app/ .
 
-RUN docker-php-ext-install pdo pdo_mysql
+#基本セットアップ
+RUN apk add ${PHP_PREFIX}-pdo ${PHP_PREFIX}-pdo_mysql ${PHP_PREFIX}-pdo_pgsql unzip
 
+#composerインストール
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
+#laravelのインストール
 RUN composer install && \
     composer dump-autoload && \
     php artisan key:generate && \
@@ -15,5 +19,11 @@ RUN composer install && \
 
 CMD ["php-fpm"]
 
-FROM base as deployment
+FROM base as local
+RUN apk update && \
+    apk add libpq-dev jq nodejs npm && \
+    npm install && \
+    npm install -g serverless@v3
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
 
+FROM base as deploy

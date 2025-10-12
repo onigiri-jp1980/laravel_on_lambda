@@ -53,3 +53,4 @@ functions:
 plugins:
     # We need to include the Bref plugin
     - ./vendor/bref/bref
+    - serverless-offline
